@@ -1,144 +1,110 @@
+/* =====================================================
+   SCANNER BARCODE POS BUTIK
+   ===================================================== */
+
 let scanner = null;
-
 let scannerAktif = false;
-
 let barcodeSedangDiproses = false;
 
 
-/* ==========================================
+/* =====================================================
    STATUS
-   ========================================== */
+   ===================================================== */
 
-function setStatus(pesan) {
+function setStatus(teks) {
 
-  const el =
-    document.getElementById("status");
+  const el = document.getElementById("status");
 
   if (el) {
-
-    el.textContent = pesan;
-
+    el.textContent = teks;
   }
 
 }
 
 
-/* ==========================================
-   BUNYI BEEP
-   ========================================== */
+/* =====================================================
+   BUNYI
+   ===================================================== */
 
 function bunyiScanner() {
 
   try {
 
-    const AudioContext =
-      window.AudioContext ||
-      window.webkitAudioContext;
-
-
-    if (!AudioContext) {
-      return;
-    }
-
-
-    const ctx =
-      new AudioContext();
-
+    const audioContext =
+      new (window.AudioContext ||
+           window.webkitAudioContext)();
 
     const oscillator =
-      ctx.createOscillator();
-
+      audioContext.createOscillator();
 
     const gain =
-      ctx.createGain();
+      audioContext.createGain();
 
+    oscillator.type = "sine";
 
-    oscillator.type =
-      "sine";
-
-
-    oscillator.frequency.value =
-      1100;
-
+    oscillator.frequency.setValueAtTime(
+      1000,
+      audioContext.currentTime
+    );
 
     gain.gain.setValueAtTime(
-      0.0001,
-      ctx.currentTime
+      0.3,
+      audioContext.currentTime
     );
-
-
-    gain.gain.exponentialRampToValueAtTime(
-      0.25,
-      ctx.currentTime + 0.01
-    );
-
-
-    gain.gain.exponentialRampToValueAtTime(
-      0.0001,
-      ctx.currentTime + 0.15
-    );
-
 
     oscillator.connect(gain);
 
-    gain.connect(ctx.destination);
+    gain.connect(audioContext.destination);
 
     oscillator.start();
 
     oscillator.stop(
-      ctx.currentTime + 0.16
+      audioContext.currentTime + 0.15
     );
 
+  } catch (e) {
 
-  } catch (error) {
-
-    console.log(
-      "Audio tidak tersedia."
-    );
+    console.log("Audio tidak tersedia.");
 
   }
 
 }
 
 
-/* ==========================================
+/* =====================================================
    GETAR HP
-   ========================================== */
+   ===================================================== */
 
 function getarHP() {
 
   try {
 
-    if (
-      navigator.vibrate
-    ) {
+    if (navigator.vibrate) {
 
-      navigator.vibrate(
-        [100, 50, 100]
-      );
+      navigator.vibrate(150);
 
     }
 
-  } catch (error) {}
+  } catch (e) {}
 
 }
 
 
-/* ==========================================
-   KIRIM BARCODE KE POS BUTIK
-   ========================================== */
+/* =====================================================
+   KIRIM BARCODE KE HALAMAN KASIR
+   ===================================================== */
 
-function kirimBarcodeKePOS(
-  barcode
-) {
+function kirimBarcodeKePOS(barcode) {
 
   barcode =
-    String(
-      barcode || ""
-    ).trim();
-
+    String(barcode || "")
+      .trim();
 
   if (!barcode) {
+
+    setStatus(
+      "❌ Barcode kosong."
+    );
 
     return;
 
@@ -146,15 +112,21 @@ function kirimBarcodeKePOS(
 
 
   console.log(
-    "📤 Mengirim barcode ke POS BUTIK:",
+    "BARCODE AKAN DIKIRIM:",
     barcode
   );
 
 
   /*
-   * CEK APAKAH SCANNER
-   * DIBUKA DARI HALAMAN KASIR
-   */
+     PENTING:
+
+     Scanner GitHub harus dibuka
+     menggunakan window.open() dari
+     halaman Kasir.
+
+     Dengan begitu window.opener
+     menunjuk ke halaman Kasir.
+  */
 
   if (
     !window.opener ||
@@ -162,77 +134,66 @@ function kirimBarcodeKePOS(
   ) {
 
     setStatus(
-      "⚠️ Halaman Kasir tidak ditemukan."
+      "❌ Halaman Kasir tidak ditemukan."
     );
-
 
     console.error(
       "window.opener tidak tersedia."
     );
 
+    alert(
+      "Scanner harus dibuka dari tombol SCAN BARCODE pada halaman Kasir."
+    );
 
     return;
 
   }
 
 
-  /*
-   * KIRIM BARCODE
-   */
-
   try {
 
     window.opener.postMessage(
-
       {
-
-        type:
-          "POS_BUTIK_BARCODE",
-
-        barcode:
-          barcode
-
+        type: "POS_BUTIK_BARCODE",
+        barcode: barcode
       },
-
       "*"
-
     );
 
 
     setStatus(
-      "✅ Barcode dikirim ke POS BUTIK."
+      "✅ Barcode dikirim ke Kasir: " +
+      barcode
     );
 
 
     console.log(
-      "✅ Barcode berhasil dikirim:",
+      "✅ BARCODE TERKIRIM KE KASIR:",
       barcode
     );
 
 
     /*
-     * Beri sedikit waktu agar
-     * pesan diterima Kasir
-     */
+       Jangan langsung close terlalu cepat.
+       Beri waktu agar halaman Kasir
+       menerima pesan.
+    */
 
-    setTimeout(
-      function() {
+    setTimeout(function() {
 
-        try {
+      try {
 
-          window.close();
+        window.close();
 
-        } catch (error) {
+      } catch (e) {
 
-          console.log(
-            "Window tidak dapat ditutup otomatis."
-          );
+        console.log(
+          "Window tidak dapat ditutup otomatis."
+        );
 
-        }
+      }
 
-      },
-      500
-    );
+    }, 1000);
 
 
   } catch (error) {
@@ -242,9 +203,8 @@ function kirimBarcodeKePOS(
       error
     );
 
-
     setStatus(
-      "❌ Gagal mengirim barcode ke POS."
+      "❌ Gagal mengirim barcode ke Kasir."
     );
 
   }
@@ -252,226 +212,134 @@ function kirimBarcodeKePOS(
 }
 
 
-/* ==========================================
+/* =====================================================
    MULAI SCANNER
-   ========================================== */
+   ===================================================== */
 
 async function mulaiScanner() {
 
   if (scannerAktif) {
 
-    setStatus(
-      "Scanner sudah aktif."
-    );
-
     return;
 
   }
 
 
-  if (
-    typeof Html5Qrcode ===
-    "undefined"
-  ) {
-
-    setStatus(
-      "❌ Library scanner belum dimuat."
-    );
-
-    return;
-
-  }
-
-
-  if (
-    !navigator.mediaDevices ||
-    !navigator.mediaDevices.getUserMedia
-  ) {
-
-    setStatus(
-      "❌ Browser tidak mendukung kamera."
-    );
-
-    return;
-
-  }
-
-
-  if (
-    !window.isSecureContext
-  ) {
-
-    setStatus(
-      "❌ Scanner harus dibuka melalui HTTPS."
-    );
-
-    return;
-
-  }
+  barcodeSedangDiproses = false;
 
 
   setStatus(
-    "📷 Meminta izin kamera..."
+    "Meminta akses kamera..."
   );
-
-
-  let stream = null;
 
 
   try {
 
-    stream =
-      await navigator.mediaDevices
-        .getUserMedia({
+    /*
+       Tes kamera terlebih dahulu
+    */
 
+    const stream =
+      await navigator.mediaDevices.getUserMedia(
+        {
           video: {
             facingMode: {
               ideal: "environment"
             }
           },
-
           audio: false
+        }
+      );
 
-        });
+
+    stream
+      .getTracks()
+      .forEach(function(track) {
+
+        track.stop();
+
+      });
 
 
-  } catch (error) {
+    scanner =
+      new Html5Qrcode(
+        "reader"
+      );
 
-    console.error(
-      "Camera permission:",
-      error
+
+    scannerAktif = true;
+
+
+    setStatus(
+      "📷 Kamera aktif. Arahkan ke barcode..."
     );
 
-
-    if (
-      error.name ===
-      "NotAllowedError"
-    ) {
-
-      setStatus(
-        "❌ Akses kamera ditolak oleh browser."
-      );
-
-    } else if (
-      error.name ===
-      "NotFoundError"
-    ) {
-
-      setStatus(
-        "❌ Kamera tidak ditemukan."
-      );
-
-    } else if (
-      error.name ===
-      "NotReadableError"
-    ) {
-
-      setStatus(
-        "❌ Kamera sedang digunakan aplikasi lain."
-      );
-
-    } else {
-
-      setStatus(
-        "❌ Kamera tidak dapat digunakan."
-      );
-
-    }
-
-
-    return;
-
-  }
-
-
-  stream
-    .getTracks()
-    .forEach(
-      track => track.stop()
-    );
-
-
-  document.getElementById(
-    "reader"
-  ).innerHTML = "";
-
-
-  scanner =
-    new Html5Qrcode(
-      "reader"
-    );
-
-
-  const config = {
-
-    fps: 10,
-
-    qrbox: {
-
-      width: 280,
-
-      height: 150
-
-    },
-
-    aspectRatio: 1.777778,
-
-    disableFlip: false
-
-  };
-
-
-  try {
 
     await scanner.start(
 
       {
-        facingMode:
-          "environment"
+        facingMode: "environment"
       },
 
-      config,
+      {
+        fps: 10,
 
+        qrbox: {
+          width: 280,
+          height: 160
+        },
+
+        aspectRatio: 1.7777778
+
+      },
 
       function(decodedText) {
 
-        if (
-          barcodeSedangDiproses
-        ) {
+        if (barcodeSedangDiproses) {
 
           return;
 
         }
 
 
-        barcodeSedangDiproses =
-          true;
-
-
         const barcode =
-          String(
-            decodedText || ""
-          ).trim();
+          String(decodedText || "")
+            .trim();
 
 
         if (!barcode) {
 
-          barcodeSedangDiproses =
-            false;
-
           return;
 
         }
 
 
-        document.getElementById(
-          "hasil"
-        ).textContent =
-          barcode;
+        barcodeSedangDiproses = true;
+
+
+        console.log(
+          "📷 BARCODE TERBACA:",
+          barcode
+        );
+
+
+        const hasil =
+          document.getElementById(
+            "hasil"
+          );
+
+
+        if (hasil) {
+
+          hasil.textContent =
+            barcode;
+
+        }
 
 
         setStatus(
-          "✅ Barcode berhasil dibaca."
+          "✅ Barcode terbaca: " +
+          barcode
         );
 
 
@@ -480,74 +348,60 @@ async function mulaiScanner() {
         getarHP();
 
 
-        console.log(
-          "BARCODE:",
-          barcode
-        );
-
-
         /*
-         * INI BAGIAN PENTING
-         *
-         * Kirim barcode ke halaman Kasir.
-         */
+           KIRIM KE HALAMAN KASIR
+        */
 
         kirimBarcodeKePOS(
           barcode
         );
 
 
-        setTimeout(
-          function() {
+        /*
+           Stop scanner
+        */
 
-            barcodeSedangDiproses =
-              false;
+        berhentiScanner();
 
-          },
-          1500
-        );
+
+        /*
+           Reset beberapa saat kemudian
+        */
+
+        setTimeout(function() {
+
+          barcodeSedangDiproses =
+            false;
+
+        }, 1500);
 
       },
-
 
       function(errorMessage) {
 
         /*
-         * Error frame diabaikan.
-         */
+           Jangan tampilkan error
+           scan frame biasa.
+        */
 
       }
 
     );
 
 
-    scannerAktif =
-      true;
-
-
-    setStatus(
-      "📷 Scanner aktif. Arahkan kamera ke barcode."
-    );
-
-
   } catch (error) {
 
     console.error(
-      "Scanner start error:",
+      "Scanner error:",
       error
     );
 
 
-    scannerAktif =
-      false;
-
-
-    scanner =
-      null;
+    scannerAktif = false;
 
 
     setStatus(
-      "❌ Kamera gagal dijalankan."
+      "❌ Kamera tidak dapat digunakan."
     );
 
   }
@@ -555,22 +409,13 @@ async function mulaiScanner() {
 }
 
 
-/* ==========================================
-   STOP SCANNER
-   ========================================== */
+/* =====================================================
+   BERHENTI SCANNER
+   ===================================================== */
 
 async function berhentiScanner() {
 
-  if (
-    !scanner
-  ) {
-
-    scannerAktif =
-      false;
-
-    setStatus(
-      "Scanner berhenti."
-    );
+  if (!scanner) {
 
     return;
 
@@ -579,50 +424,43 @@ async function berhentiScanner() {
 
   try {
 
-    if (
-      scannerAktif
-    ) {
+    if (scannerAktif) {
 
       await scanner.stop();
 
     }
 
-
-    scanner.clear();
-
-
   } catch (error) {
 
-    console.error(
-      "Stop scanner:",
-      error
+    console.log(
+      "Scanner sudah berhenti."
     );
 
   }
 
 
-  scanner =
-    null;
+  try {
+
+    await scanner.clear();
+
+  } catch (error) {}
 
 
-  scannerAktif =
-    false;
+  scanner = null;
+
+  scannerAktif = false;
 
 
-  barcodeSedangDiproses =
-    false;
-
-
-  setStatus(
-    "Scanner berhenti."
+  console.log(
+    "Scanner dihentikan."
   );
 
 }
 
 
-/* ==========================================
-   BARCODE MANUAL
-   ========================================== */
+/* =====================================================
+   INPUT BARCODE MANUAL
+   ===================================================== */
 
 function prosesManual() {
 
@@ -632,16 +470,10 @@ function prosesManual() {
     );
 
 
-  const barcode =
-    String(
-      input.value || ""
-    ).trim();
+  if (!input) {
 
-
-  if (!barcode) {
-
-    setStatus(
-      "Masukkan barcode terlebih dahulu."
+    alert(
+      "Input barcode tidak ditemukan."
     );
 
     return;
@@ -649,14 +481,47 @@ function prosesManual() {
   }
 
 
-  document.getElementById(
-    "hasil"
-  ).textContent =
-    barcode;
+  const barcode =
+    String(input.value || "")
+      .trim();
+
+
+  if (!barcode) {
+
+    setStatus(
+      "❌ Masukkan barcode terlebih dahulu."
+    );
+
+    input.focus();
+
+    return;
+
+  }
+
+
+  console.log(
+    "⌨️ BARCODE MANUAL:",
+    barcode
+  );
+
+
+  const hasil =
+    document.getElementById(
+      "hasil"
+    );
+
+
+  if (hasil) {
+
+    hasil.textContent =
+      barcode;
+
+  }
 
 
   setStatus(
-    "✅ Barcode berhasil dibaca."
+    "🔎 Mencari barcode: " +
+    barcode
   );
 
 
@@ -665,30 +530,22 @@ function prosesManual() {
   getarHP();
 
 
-  console.log(
-    "BARCODE MANUAL:",
-    barcode
-  );
-
-
   /*
-   * KIRIM BARCODE MANUAL
-   * KE POS BUTIK JUGA
-   */
+     SAMA DENGAN HASIL SCAN KAMERA:
+
+     Kirim barcode ke Kasir
+  */
 
   kirimBarcodeKePOS(
     barcode
   );
 
-
-  input.value = "";
-
 }
 
 
-/* ==========================================
-   ENTER PADA INPUT
-   ========================================== */
+/* =====================================================
+   ENTER PADA INPUT MANUAL
+   ===================================================== */
 
 document.addEventListener(
   "DOMContentLoaded",
@@ -707,9 +564,10 @@ document.addEventListener(
         function(event) {
 
           if (
-            event.key ===
-            "Enter"
+            event.key === "Enter"
           ) {
+
+            event.preventDefault();
 
             prosesManual();
 
