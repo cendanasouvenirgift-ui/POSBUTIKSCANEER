@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>POS BUTIK - Scanner Barcode</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+</head>
+
+<body>
+
+  <div class="app">
+
+    <header class="header">
+
+      <div class="brand">
+        <div class="brand-icon">👗</div>
+
+        <div>
+          <div class="brand-title">
+            POS BUTIK
+          </div>
+
+          <div class="brand-subtitle">
+            BARCODE SCANNER
+          </div>
+        </div>
+      </div>
+
+    </header>
+
+
+    <main class="scanner-page">
+
+      <div class="scanner-card">
+
+        <div class="scanner-title">
+          SCAN BARCODE
+        </div>
+
+        <div class="scanner-subtitle">
+          Arahkan kamera ke barcode produk
+        </div>
+
+
+        <!-- AREA KAMERA -->
+
+        <div
+          id="reader"
+          class="reader"
+        ></div>
+
+
+        <!-- STATUS -->
+
+        <div
+          id="status"
+          class="status"
+        >
+          Scanner siap digunakan.
+        </div>
+
+
+        <!-- HASIL BARCODE -->
+
+        <div
+          id="hasil"
+          class="hasil"
+        >
+          -
+        </div>
+
+
+        <!-- TOMBOL -->
+
+        <div class="buttons">
+
+          <button
+            id="btnStart"
+            class="btn btn-primary"
+            onclick="mulaiScanner()"
+          >
+            📷 MULAI SCANNER
+          </button>
+
+
+          <button
+            id="btnStop"
+            class="btn btn-danger"
+            onclick="berhentiScanner()"
+          >
+            ⏹ STOP
+          </button>
+
+        </div>
+
+
+        <!-- INPUT MANUAL -->
+
+        <div class="manual">
+
+          <div class="manual-title">
+            ATAU MASUKKAN BARCODE MANUAL
+          </div>
+
+          <div class="manual-row">
+
+            <input
+              id="barcodeManual"
+              type="text"
+              placeholder="Scan / ketik barcode..."
+              autocomplete="off"
+            >
+
+            <button
+              onclick="prosesManual()"
+            >
+              CARI
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </main>
+
+
+    <footer>
+
+      POS BUTIK • Barcode Scanner
+
+    </footer>
+
+  </div>
+
+
+  <!-- LIBRARY HTML5 QR CODE -->
+
+  <script
+    src="https://unpkg.com/html5-qrcode"
+  ></script>
+
+
+  <script src="scanner.js"></script>
+
+</body>
+
+</html>
