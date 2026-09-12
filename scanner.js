@@ -125,6 +125,134 @@ function getarHP() {
 
 
 /* ==========================================
+   KIRIM BARCODE KE POS BUTIK
+   ========================================== */
+
+function kirimBarcodeKePOS(
+  barcode
+) {
+
+  barcode =
+    String(
+      barcode || ""
+    ).trim();
+
+
+  if (!barcode) {
+
+    return;
+
+  }
+
+
+  console.log(
+    "📤 Mengirim barcode ke POS BUTIK:",
+    barcode
+  );
+
+
+  /*
+   * CEK APAKAH SCANNER
+   * DIBUKA DARI HALAMAN KASIR
+   */
+
+  if (
+    !window.opener ||
+    window.opener.closed
+  ) {
+
+    setStatus(
+      "⚠️ Halaman Kasir tidak ditemukan."
+    );
+
+
+    console.error(
+      "window.opener tidak tersedia."
+    );
+
+
+    return;
+
+  }
+
+
+  /*
+   * KIRIM BARCODE
+   */
+
+  try {
+
+    window.opener.postMessage(
+
+      {
+
+        type:
+          "POS_BUTIK_BARCODE",
+
+        barcode:
+          barcode
+
+      },
+
+      "*"
+
+    );
+
+
+    setStatus(
+      "✅ Barcode dikirim ke POS BUTIK."
+    );
+
+
+    console.log(
+      "✅ Barcode berhasil dikirim:",
+      barcode
+    );
+
+
+    /*
+     * Beri sedikit waktu agar
+     * pesan diterima Kasir
+     */
+
+    setTimeout(
+      function() {
+
+        try {
+
+          window.close();
+
+        } catch (error) {
+
+          console.log(
+            "Window tidak dapat ditutup otomatis."
+          );
+
+        }
+
+      },
+      500
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "Gagal mengirim barcode:",
+      error
+    );
+
+
+    setStatus(
+      "❌ Gagal mengirim barcode ke POS."
+    );
+
+  }
+
+}
+
+
+/* ==========================================
    MULAI SCANNER
    ========================================== */
 
@@ -186,10 +314,6 @@ async function mulaiScanner() {
     "📷 Meminta izin kamera..."
   );
 
-
-  /*
-   * MINTA IZIN KAMERA
-   */
 
   let stream = null;
 
@@ -260,21 +384,12 @@ async function mulaiScanner() {
   }
 
 
-  /*
-   * Matikan stream sementara.
-   * html5-qrcode akan membuka kamera.
-   */
-
   stream
     .getTracks()
     .forEach(
       track => track.stop()
     );
 
-
-  /*
-   * Bersihkan reader
-   */
 
   document.getElementById(
     "reader"
@@ -339,6 +454,16 @@ async function mulaiScanner() {
           ).trim();
 
 
+        if (!barcode) {
+
+          barcodeSedangDiproses =
+            false;
+
+          return;
+
+        }
+
+
         document.getElementById(
           "hasil"
         ).textContent =
@@ -355,18 +480,19 @@ async function mulaiScanner() {
         getarHP();
 
 
-        /*
-         * Kirim ke Apps Script
-         *
-         * Untuk sementara kita tampilkan
-         * barcode terlebih dahulu.
-         *
-         * Setelah scanner berhasil,
-         * kita sambungkan ke POS BUTIK.
-         */
-
         console.log(
           "BARCODE:",
+          barcode
+        );
+
+
+        /*
+         * INI BAGIAN PENTING
+         *
+         * Kirim barcode ke halaman Kasir.
+         */
+
+        kirimBarcodeKePOS(
           barcode
         );
 
@@ -530,8 +656,7 @@ function prosesManual() {
 
 
   setStatus(
-    "✅ Barcode: " +
-    barcode
+    "✅ Barcode berhasil dibaca."
   );
 
 
@@ -542,6 +667,16 @@ function prosesManual() {
 
   console.log(
     "BARCODE MANUAL:",
+    barcode
+  );
+
+
+  /*
+   * KIRIM BARCODE MANUAL
+   * KE POS BUTIK JUGA
+   */
+
+  kirimBarcodeKePOS(
     barcode
   );
 
